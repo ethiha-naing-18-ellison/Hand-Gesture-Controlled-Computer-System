@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand Tracking Mouse Control</title>
+</head>
+<body>
+    <h1>Hand Tracking Mouse Control</h1>
+
+    <!-- Video Feed -->
+    <div>
+        <img id="videoFeed" src="/video_feed" alt="Video Feed" style="width: 640px; height: 480px;">
+    </div>
+
+    <!-- Start/Stop Buttons -->
+    <div>
+        <button id="startButton">Start</button>
+        <button id="stopButton">Stop</button>
+    </div>
+
+    <!-- Settings Form -->
+    <form id="settingsForm">
+        <label for="screenWidth">Screen Width:</label>
+        <input type="number" id="screenWidth" name="screenWidth" value="1920">
+        <label for="screenHeight">Screen Height:</label>
+        <input type="number" id="screenHeight" name="screenHeight" value="1080">
+        <button type="submit">Update Settings</button>
+    </form>
+
+    <script>
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const videoFeed = document.getElementById('videoFeed');
+
+        // Start the camera
+        startButton.addEventListener('click', () => {
+            fetch('/start', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    videoFeed.src = '/video_feed';
+                })
+                .catch(error => console.error(error));
+        });
+
+        // Stop the camera
+        stopButton.addEventListener('click', () => {
+            fetch('/stop', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    videoFeed.src = '';
+                })
+                .catch(error => console.error(error));
+        });
+
+        // Update settings
+        document.getElementById('settingsForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const screenWidth = document.getElementById('screenWidth').value;
+            const screenHeight = document.getElementById('screenHeight').value;
+            fetch('/update_settings', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ screenWidth, screenHeight })
+            }).then(response => response.json())
+              .then(data => alert(data.message));
+        });
+    </script>
+</body>
+</html>
