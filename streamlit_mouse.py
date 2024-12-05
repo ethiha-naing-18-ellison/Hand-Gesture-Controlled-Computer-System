@@ -2,9 +2,17 @@ import cv2
 import numpy as np
 import mediapipe as mp
 import time
-import pyautogui
 import HandTrackingModule as htm
 import streamlit as st
+import os
+
+try:
+    if "DISPLAY" in os.environ:
+        import pyautogui
+    else:
+        print("Running in headless mode. Skipping pyautogui.")
+except ImportError:
+    print("PyAutoGUI is not available in this environment.")
 
 # Streamlit page configuration
 st.title("Hand Tracking Mouse Control")
