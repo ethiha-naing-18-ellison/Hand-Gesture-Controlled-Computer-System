@@ -4,15 +4,10 @@ import mediapipe as mp
 import time
 import HandTrackingModule as htm
 import streamlit as st
-import os
+from pynput.mouse import Controller, Button
 
-try:
-    if "DISPLAY" in os.environ:
-        import pyautogui
-    else:
-        print("Running in headless mode. Skipping pyautogui.")
-except ImportError:
-    print("PyAutoGUI is not available in this environment.")
+# Initialize the mouse controller
+mouse = Controller()
 
 # Streamlit page configuration
 st.title("Hand Tracking Mouse Control")
@@ -44,7 +39,7 @@ if start_app:
     plocX, plocY = 0, 0
     clocX, clocY = 0, 0
     detector = htm.handDetector(maxHands=1)
-    wScr, hScr = pyautogui.size()
+    wScr, hScr = st.sidebar.number_input("Screen Width", value=1920), st.sidebar.number_input("Screen Height", value=1080)
 
     while True:
         # Check if the STOP button is pressed
@@ -65,8 +60,8 @@ if start_app:
         lmList, bbox = detector.findPosition(img)
 
         if len(lmList) != 0:
-            x1, y1 = lmList[8][1:]
-            x2, y2 = lmList[12][1:]
+            x1, y1 = lmList[8][1:]  # Index finger tip
+            x2, y2 = lmList[12][1:]  # Middle finger tip
 
             # Check which fingers are up
             fingers = detector.fingersUp()
@@ -74,7 +69,7 @@ if start_app:
             # Draw rectangle for frame reduction
             cv2.rectangle(img, (frameR, frameR), (wCam - frameR, hCam - frameR), (255, 0, 255), 2)
 
-            # Moving mode
+            # Moving mode (Index finger up, middle finger down)
             if fingers[1] == 1 and fingers[2] == 0:
                 x3 = np.interp(x1, (frameR, wCam - frameR), (0, wScr))
                 y3 = np.interp(y1, (frameR, hCam - frameR), (0, hScr))
@@ -83,12 +78,28 @@ if start_app:
                 clocX = plocX + (x3 - plocX) / smoothening
                 clocY = plocY + (y3 - plocY) / smoothening
 
-                # Move mouse
-                pyautogui.moveTo(wScr - clocX, clocY)
+                # Move mouse using pynput
+                mouse.position = (wScr - clocX, clocY)
                 cv2.circle(img, (x1, y1), 15, (255, 0, 255), cv2.FILLED)
                 plocX, plocY = clocX, clocY
 
+            # Left click (Index and middle fingers up)
+            if fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 0 and fingers[4] == 0:
+                mouse.click(Button.left, 1)
+                st.write("Left click performed.")
+                time.sleep(0.2)  # Prevent multiple rapid clicks
 
+            # Right click (Index, middle, and ring fingers up)
+            if fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 1 and fingers[4] == 0:
+                mouse.click(Button.right, 1)
+                st.write("Right click performed.")
+                time.sleep(0.2)  # Prevent multiple rapid clicks
+
+            # Double click (Index, middle, ring, and pinky fingers up)
+            if fingers[1] == 1 and fingers[2] == 1 and fingers[3] == 1 and fingers[4] == 1:
+                mouse.click(Button.left, 2)
+                st.write("Double click performed.")
+                time.sleep(0.5)  # Prevent multiple double clicks
 
         # Calculate and display frame rate
         cTime = time.time()
